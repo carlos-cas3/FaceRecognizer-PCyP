@@ -1,0 +1,63 @@
+from typing import List, Tuple, Dict, Any
+
+from UI.components.face_drawing import BoundingBoxDrawer, LabelDrawer, FaceIDDrawer
+
+# Orquestador de renderizado de caras que delega a componentes especializados para cada parte del dibujo.
+
+class FaceRenderer:
+    @staticmethod
+    def draw(
+        frame,
+        faces: List[Tuple[int, Any, Tuple[int, int, int, int]]],
+        mode: str,
+        registered_faces: Dict[int, str],
+        selected_face_ids: List[int],
+        locked_faces: Dict[int, Dict]
+    ):
+        for i, (face_id, face_crop, bbox) in enumerate(faces):
+            FaceRenderer._draw_single_face(
+                frame, i, face_id, bbox,
+                mode, registered_faces, selected_face_ids, locked_faces
+            )
+    
+    @staticmethod
+    def _draw_single_face(
+        frame,
+        index: int,
+        face_id: int,
+        bbox: Tuple[int, int, int, int],
+        mode: str,
+        registered_faces: Dict[int, str],
+        selected_face_ids: List[int],
+        locked_faces: Dict[int, Dict]
+    ):
+        x, y, w, h = bbox
+        center_x = x + w // 2
+        
+        # Determinar estado
+        is_registered = face_id in registered_faces
+        is_selected = mode == "register" and face_id in selected_face_ids
+        is_locked = face_id in locked_faces
+        
+        # 1. Dibujar bounding boxes
+        BoundingBoxDrawer.draw(
+            frame, bbox, mode,
+            is_registered, is_selected, is_locked
+        )
+        
+        # 2. Crear y dibujar label
+        label = LabelDrawer.create_label(
+            index, face_id,
+            is_registered, is_selected,
+            registered_faces
+        )
+        
+        color = BoundingBoxDrawer.get_color(mode, is_registered, is_selected)
+        LabelDrawer.draw(frame, label, x, y, color)
+        
+        # 3. Dibujar ID grande (solo en modo registro)
+        if FaceIDDrawer.should_draw(mode):
+            FaceIDDrawer.draw(
+                frame, face_id, center_x, y,
+                is_locked, is_selected
+            )

@@ -1,0 +1,24 @@
+# Configuracion simplificada - FaceRecognizer
+# Version para 1 sola camara
+
+# Camara
+camera:
+  index: 0                    # Indice de la camara (0 = webcam principal)
+  name: "Camara Principal"
+  resolution: [640, 480]      # Resolucion de captura
+
+# Deteccion YOLO
+detection:
+  model_path: "models/yolov8n-face-lindevs.pt"
+  confidence: 0.5             # Confianza minima (0.0 - 1.0)
+  detection_interval: 0.5     # Segundos entre detecciones YOLO
+
+# ZMQ (comunicacion con C++)
+zmq:
+  enabled: true              # false = modo solo deteccion, true = enviar a C++
+  endpoint: "tcp://192.168.18.4:5555"  # localhost para pruebas locales
+  
+# Notas:
+# - Para probar sin C++: enabled: false
+# - Para probar con C++ local: enabled: true, endpoint: tcp://127.0.0.1:5555
+# - Para C++ en VM: enabled: true, endpoint: tcp://192.168.18.4:5555
