@@ -9,35 +9,29 @@ from pipeline.detector import FaceDetector
 from pipeline.tracker import FaceTracker
 from UI.renderer import UIRenderer
 from UI.input_handler import InputHandler, AppState
-from core.face_manager import FaceManager
 from core.frame_manager import FrameManager
 from core.app_orchestrator import ApplicationOrchestrator
-from communication.zmq_client import ZMQClient
+from communication.register_client import RegisterClient
+from communication.recognition_client import RecognitionClient
 
 logger = logging.getLogger(__name__)
-
-# Aplicación principal de reconocimiento facial.
-# Inicializa componentes y delega el loop principal al orquestador.
 
 class FaceRecognizerSimple:
     def __init__(self, config_path: str = "config_simple.yaml"):
         self.config_path = Path(config_path)
         self.config = None
         
-        # Componentes del sistema
         self.camera: Optional[Camera] = None
         self.detector: Optional[FaceDetector] = None
         self.tracker: Optional[FaceTracker] = None
-        self.zmq_client: Optional[ZMQClient] = None
+        self.register_client: Optional[RegisterClient] = None
+        self.recognition_client: Optional[RecognitionClient] = None
         self.renderer: Optional[UIRenderer] = None
         self.input_handler: Optional[InputHandler] = None
-        self.face_manager: Optional[FaceManager] = None
         self.frame_manager: Optional[FrameManager] = None
         
-        # Orquestador
         self.orchestrator: Optional[ApplicationOrchestrator] = None
         
-        # Estado de la aplicación
         self.state = AppState()
         
         self._load_config()
@@ -54,7 +48,6 @@ class FaceRecognizerSimple:
     def initialize(self):
         logger.info("Inicializando sistema...")
         
-        # === Inicializar Cámara ===
         cam_config = self.config['camera']
         self.camera = Camera(
             index=cam_config['index'],
@@ -62,7 +55,6 @@ class FaceRecognizerSimple:
             height=cam_config['resolution'][1]
         )
         
-        # === Inicializar Detector y Tracker ===
         det_config = self.config['detection']
         self.detector = FaceDetector(
             model_path=det_config['model_path'],
@@ -72,31 +64,43 @@ class FaceRecognizerSimple:
             interval=det_config['detection_interval']
         )
         
-        # === Inicializar ZMQ (opcional) ===
         zmq_config = self.config.get('zmq', {})
         if zmq_config.get('enabled', False):
-            self.zmq_client = ZMQClient(
-                send_endpoint=zmq_config['endpoint']  # Solo un endpoint
-                # recv_endpoint ya no es necesario
+            self.register_client = RegisterClient(
+                endpoint=zmq_config['send_endpoint']
             )
-            self.zmq_client.connect()
+            self.register_client.connect()
+            
+            recv_endpoint = zmq_config.get('recv_endpoint')
+            if recv_endpoint:
+                self.recognition_client = RecognitionClient(
+                    send_endpoint=zmq_config['send_endpoint'],
+                    recv_endpoint=recv_endpoint
+                )
+                self.recognition_client.connect()
         
-        # === Inicializar Managers y UI ===
+        register_config = {
+            'id_timeout': 5.0,
+            'match_threshold': 50
+        }
+        
+        recognition_config = self.config.get('recognition', {})
+        
         self.renderer = UIRenderer()
         self.input_handler = InputHandler()
-        self.face_manager = FaceManager(id_timeout=5.0, match_threshold=50)
         self.frame_manager = FrameManager()
         
-        # === Inicializar Orquestador ===
         self.orchestrator = ApplicationOrchestrator(
             camera=self.camera,
             detector=self.detector,
             tracker=self.tracker,
-            face_manager=self.face_manager,
             frame_manager=self.frame_manager,
             renderer=self.renderer,
             input_handler=self.input_handler,
-            zmq_client=self.zmq_client
+            register_client=self.register_client,
+            recognition_client=self.recognition_client,
+            register_config=register_config,
+            recognition_config=recognition_config
         )
         
         logger.info("Sistema inicializado correctamente")
@@ -113,8 +117,11 @@ class FaceRecognizerSimple:
         if self.camera:
             self.camera.release()
         
-        if self.zmq_client:
-            self.zmq_client.close()
+        if self.register_client:
+            self.register_client.close()
+        
+        if self.recognition_client:
+            self.recognition_client.close()
         
         if self.renderer:
             self.renderer.cleanup()

@@ -1,28 +1,25 @@
 import cv2
-from typing import Tuple
-
-# Componente para dibujar bounding boxes de caras detectadas, con colores y estilos según el estado
+from typing import Tuple, Optional, Any
 
 class BoundingBoxDrawer:
-    # Colores predefinidos
-    COLOR_REGISTERED = (0, 255, 0)      # Verde
-    COLOR_SELECTED = (0, 255, 0)        # Verde
-    COLOR_REGISTER_MODE = (0, 165, 255) # Naranja
-    COLOR_RECOGNIZE_MODE = (255, 0, 0)  # Rojo
-    COLOR_HIGHLIGHT = (0, 255, 255)     # Cian
+    COLOR_SELECTED = (0, 255, 0)
+    COLOR_REGISTER_MODE = (0, 165, 255)
+    COLOR_RECOGNIZE_MODE = (255, 0, 0)
+    COLOR_HIGHLIGHT = (0, 255, 255)
+    COLOR_RECOGNIZED = (0, 200, 0)
     
     @staticmethod
     def get_color(
         mode: str,
-        is_registered: bool,
-        is_selected: bool
+        is_selected: bool,
+        recognized_identity: Optional[Any] = None
     ) -> Tuple[int, int, int]:
-        if is_registered:
-            return BoundingBoxDrawer.COLOR_REGISTERED
-        elif is_selected:
+        if is_selected:
             return BoundingBoxDrawer.COLOR_SELECTED
         elif mode == "register":
             return BoundingBoxDrawer.COLOR_REGISTER_MODE
+        elif recognized_identity:
+            return BoundingBoxDrawer.COLOR_RECOGNIZED
         else:
             return BoundingBoxDrawer.COLOR_RECOGNIZE_MODE
     
@@ -56,13 +53,11 @@ class BoundingBoxDrawer:
         frame,
         bbox: Tuple[int, int, int, int],
         mode: str,
-        is_registered: bool,
         is_selected: bool,
-        is_locked: bool
+        is_locked: bool,
+        recognized_identity: Optional[Any] = None
     ):
-        color = BoundingBoxDrawer.get_color(mode, is_registered, is_selected)
-        # Bounding box principal
+        color = BoundingBoxDrawer.get_color(mode, is_selected, recognized_identity)
         BoundingBoxDrawer.draw_primary_box(frame, bbox, color)
-        # Borde de resaltado para caras seleccionadas/bloqueadas
         if is_locked or is_selected:
             BoundingBoxDrawer.draw_highlight_box(frame, bbox)
