@@ -1,6 +1,6 @@
 ##  Requisitos
-Antes de comenzar, asegúrate de tener instalado:
-- Python 3.10.X o superior
+Tener instalado:
+- Python 3.12.X o superior
 - pip
 
 Verificar versión de Python:
