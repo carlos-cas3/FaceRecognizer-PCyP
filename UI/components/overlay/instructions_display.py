@@ -13,9 +13,9 @@ class InstructionsDisplay:
     
     # Textos de instrucciones predefinidos
     INSTRUCTIONS = {
-        'register_idle': "0-9:Seleccionar  Enter:Confirmar  2:Rec  3:Salir",
-        'register_selecting': None,  # No mostrar (están en el panel)
-        'recognize': "1:Registrar  2:Reconocer  3:Salir"
+        'register_idle': "0-9:Seleccionar cara  Enter:Confirmar nombres  2:Reconocimiento  3:Salir",
+        'register_selecting': None,
+        'recognize': "1:Registro  2:Reconocimiento  3:Salir"
     }
     
     @staticmethod

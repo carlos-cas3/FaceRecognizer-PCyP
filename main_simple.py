@@ -67,17 +67,16 @@ class FaceRecognizerSimple:
         zmq_config = self.config.get('zmq', {})
         if zmq_config.get('enabled', False):
             self.register_client = RegisterClient(
-                endpoint=zmq_config['send_endpoint']
+                send_endpoint=zmq_config.get('register_send_endpoint', 'tcp://127.0.0.1:5555'),
+                recv_endpoint=zmq_config.get('register_recv_endpoint', 'tcp://127.0.0.1:5556')
             )
             self.register_client.connect()
             
-            recv_endpoint = zmq_config.get('recv_endpoint')
-            if recv_endpoint:
-                self.recognition_client = RecognitionClient(
-                    send_endpoint=zmq_config['send_endpoint'],
-                    recv_endpoint=recv_endpoint
-                )
-                self.recognition_client.connect()
+            self.recognition_client = RecognitionClient(
+                send_endpoint=zmq_config.get('recognition_send_endpoint', 'tcp://127.0.0.1:5557'),
+                recv_endpoint=zmq_config.get('recognition_recv_endpoint', 'tcp://127.0.0.1:5558')
+            )
+            self.recognition_client.connect()
         
         register_config = {
             'id_timeout': 5.0,

@@ -80,3 +80,4 @@ class UIRenderer:
     
     def cleanup(self):
         cv2.destroyAllWindows()
+        cv2.waitKey(1)

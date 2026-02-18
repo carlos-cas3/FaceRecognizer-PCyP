@@ -22,9 +22,9 @@ class LabelDrawer:
         elif mode == "recognize":
             return f"ID:{face_id} Identificando..."
         elif is_selected:
-            return f"[{index}] ID:{face_id} [OK]"
+            return f"[{index}] SELECCIONADO"
         else:
-            return f"[{index}] ID:{face_id}"
+            return f"[{index}] Presiona '{index}'"
     
     @staticmethod
     def draw(

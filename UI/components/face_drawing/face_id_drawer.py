@@ -4,11 +4,11 @@ from typing import Tuple
 class FaceIDDrawer:
     
     FONT = cv2.FONT_HERSHEY_SIMPLEX
-    FONT_SCALE = 0.8
+    FONT_SCALE = 0.9
     FONT_THICKNESS = 2
     BG_COLOR = (0, 0, 0)
-    COLOR_LOCKED = (0, 255, 255)
-    COLOR_TEMPORARY = (255, 255, 0)
+    COLOR_SELECTED = (0, 255, 0)
+    COLOR_AVAILABLE = (255, 255, 0)
     COLOR_RECOGNIZED = (0, 255, 0)
     PADDING = 5
     OFFSET_Y = 15
@@ -18,18 +18,11 @@ class FaceIDDrawer:
         return mode == "register"
     
     @staticmethod
-    def create_id_text(face_id: int, is_locked: bool, is_selected: bool) -> str:
-        id_text = f"ID {face_id}"
-        if is_locked or is_selected:
-            id_text += " [BLOQUEADO]"
-        return id_text
-    
-    @staticmethod
     def get_color(is_locked: bool, is_selected: bool) -> Tuple[int, int, int]:
         if is_locked or is_selected:
-            return FaceIDDrawer.COLOR_LOCKED
+            return FaceIDDrawer.COLOR_SELECTED
         else:
-            return FaceIDDrawer.COLOR_TEMPORARY
+            return FaceIDDrawer.COLOR_AVAILABLE
     
     @staticmethod
     def draw(
@@ -40,7 +33,11 @@ class FaceIDDrawer:
         is_locked: bool,
         is_selected: bool
     ):
-        id_text = FaceIDDrawer.create_id_text(face_id, is_locked, is_selected)
+        if is_locked or is_selected:
+            id_text = "[OK]"
+        else:
+            id_text = f"[{face_id}]"
+        
         id_color = FaceIDDrawer.get_color(is_locked, is_selected)
         
         (id_w, id_h), _ = cv2.getTextSize(

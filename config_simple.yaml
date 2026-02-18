@@ -16,16 +16,31 @@ detection:
 # ZMQ (comunicacion con C++)
 zmq:
   enabled: true              # false = modo solo deteccion, true = enviar a C++
-  send_endpoint: "tcp://192.168.18.4:5555"   # Endpoint para enviar datos
-  recv_endpoint: "tcp://192.168.18.4:5556"   # Endpoint para recibir respuestas
+  
+  # Registro de nuevas personas
+  register_send_endpoint: "tcp://192.168.18.4:5555"   # Python envía requests de registro
+  register_recv_endpoint: "tcp://192.168.18.4:5556"   # Python recibe confirmaciones
+  
+  # Reconocimiento de personas
+  recognition_send_endpoint: "tcp://192.168.18.4:5557"   # Python envía requests de reconocimiento
+  recognition_recv_endpoint: "tcp://192.168.18.4:5558"   # Python recibe identidades
 
 # Reconocimiento facial
 recognition:
-  interval: 1.0              # Segundos entre envios de reconocimiento
-  confidence_threshold: 0.7  # Confianza minima para aceptar identidad
-  result_timeout: 5.0        # Segundos antes de "olvidar" un reconocimiento
+  interval: 1.0                    # Segundos entre envios de reconocimiento
+  confidence_threshold: 0.7        # Confianza minima para aceptar identidad
+  result_timeout: 10.0             # Timeout de respaldo
+  position_match_threshold: 50     # Pixeles de tolerancia para matching por posicion
+  position_cache_timeout: 10.0     # Segundos antes de olvidar posicion cacheada
   
+# Arquitectura de puertos:
+# - 5555: Python → C++ (registro requests)
+# - 5556: C++ → Python (registro confirmaciones)
+# - 5557: Python → C++ (reconocimiento requests)
+# - 5558: C++ → Python (reconocimiento respuestas)
+#
 # Notas:
+# - El nombre reconocido se mantiene mientras la cara este visible en pantalla
+# - Si la cara sale y vuelve a entrar (< 10 seg), mantiene el nombre por posicion
 # - Para probar sin C++: enabled: false
-# - Para probar con C++ local: send_endpoint: tcp://127.0.0.1:5555, recv_endpoint: tcp://127.0.0.1:5556
-# - Para C++ en VM: send_endpoint: tcp://192.168.18.4:5555, recv_endpoint: tcp://192.168.18.4:5556
+# - Para probar local: cambiar IP a 127.0.0.1

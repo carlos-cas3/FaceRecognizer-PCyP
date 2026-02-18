@@ -1,6 +1,6 @@
 import time
 import logging
-from typing import Optional, List, Tuple, Any
+from typing import Optional, List, Tuple, Any, Dict
 import cv2
 
 from core.render_context import RenderContext
@@ -43,10 +43,14 @@ class ApplicationOrchestrator:
             match_threshold=register_config.get('match_threshold', 50)
         )
         self.recognition_manager = RecognitionManager(
-            recognition_timeout=recognition_config.get('result_timeout', 5.0),
+            recognition_timeout=recognition_config.get('result_timeout', 10.0),
             send_interval=recognition_config.get('interval', 1.0),
-            confidence_threshold=recognition_config.get('confidence_threshold', 0.7)
+            confidence_threshold=recognition_config.get('confidence_threshold', 0.7),
+            position_match_threshold=recognition_config.get('position_match_threshold', 50),
+            position_cache_timeout=recognition_config.get('position_cache_timeout', 10.0)
         )
+        
+        self.pending_bboxes: Dict[int, Tuple[int, int, int, int]] = {}
         
         self.frame_processor = FrameProcessor(tracker, detector)
         self.metrics = MetricsManager(log_interval=30)
@@ -67,6 +71,8 @@ class ApplicationOrchestrator:
     
     def stop(self):
         self.running = False
+        cv2.destroyAllWindows()
+        cv2.waitKey(1)
         logger.info(f"Loop detenido - FPS promedio: {self.metrics.get_fps():.1f}")
     
     def _process_frame(self) -> bool:
@@ -104,9 +110,19 @@ class ApplicationOrchestrator:
         self.frame_manager.resume()
         self.register_manager.clear_all()
         
+        active_face_ids = [face_id for face_id, _, _ in faces]
+        
+        self.recognition_manager.refresh_active_faces(active_face_ids)
+        
+        for face_id, _, bbox in faces:
+            if not self.recognition_manager.is_recognized(face_id):
+                if self.recognition_manager.assign_identity_from_cache(face_id, bbox):
+                    pass
+        
+        self.recognition_manager.cleanup_not_visible(active_face_ids)
+        
         self._send_for_recognition(frame, faces)
         self._receive_recognition_results()
-        self.recognition_manager.cleanup_expired()
         
         self._render_ui(frame, faces)
         
@@ -117,15 +133,17 @@ class ApplicationOrchestrator:
             return
         
         for face_id, _, bbox in faces:
-            if self.recognition_manager.should_send(face_id):
-                success = self.recognition_client.send_recognition_request(
-                    frame=frame,
-                    face_id=face_id,
-                    bbox=bbox
-                )
-                if success:
-                    self.recognition_manager.mark_sent(face_id)
-                    logger.debug(f"Cara {face_id} enviada para reconocimiento")
+            if not self.recognition_manager.is_recognized(face_id):
+                if self.recognition_manager.should_send(face_id):
+                    success = self.recognition_client.send_recognition_request(
+                        frame=frame,
+                        face_id=face_id,
+                        bbox=bbox
+                    )
+                    if success:
+                        self.recognition_manager.mark_sent(face_id)
+                        self.pending_bboxes[face_id] = bbox
+                        logger.debug(f"Cara {face_id} enviada para reconocimiento")
     
     def _receive_recognition_results(self):
         if not self.recognition_client or not self.recognition_client.is_connected:
@@ -133,11 +151,13 @@ class ApplicationOrchestrator:
         
         result = self.recognition_client.receive_result()
         if result:
+            bbox = self.pending_bboxes.pop(result.face_id, None)
             self.recognition_manager.update_identity(
                 face_id=result.face_id,
                 person_id=result.person_id,
                 person_name=result.person_name,
-                confidence=result.confidence
+                confidence=result.confidence,
+                bbox=bbox
             )
     
     def _render_ui(self, frame, faces):

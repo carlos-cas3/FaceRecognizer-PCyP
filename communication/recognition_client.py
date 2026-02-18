@@ -25,6 +25,9 @@ class RecognitionClient:
         self.send_socket: Optional[zmq.Socket] = None
         self.recv_socket: Optional[zmq.Socket] = None
         
+        self._monitor_socket: Optional[zmq.Socket] = None
+        self._connected = False
+        
         self.enabled = False
     
     def connect(self) -> bool:
@@ -33,6 +36,14 @@ class RecognitionClient:
             
             self.send_socket = self.context.socket(zmq.PUSH)
             self.send_socket.setsockopt(zmq.SNDHWM, 100)
+            
+            monitor_addr = f"inproc://monitor-recognize-{id(self)}"
+            self.send_socket.monitor(monitor_addr, zmq.EVENT_CONNECTED | zmq.EVENT_DISCONNECTED | zmq.EVENT_CONNECT_DELAYED)
+            
+            self._monitor_socket = self.context.socket(zmq.PAIR)
+            self._monitor_socket.setsockopt(zmq.RCVTIMEO, 0)
+            self._monitor_socket.connect(monitor_addr)
+            
             self.send_socket.connect(self.send_endpoint)
             
             self.recv_socket = self.context.socket(zmq.PULL)
@@ -40,13 +51,38 @@ class RecognitionClient:
             self.recv_socket.connect(self.recv_endpoint)
             
             self.enabled = True
-            logger.info(f"RecognitionClient conectado - Send: {self.send_endpoint}, Recv: {self.recv_endpoint}")
+            logger.info(f"RecognitionClient inicializado - Send: {self.send_endpoint}, Recv: {self.recv_endpoint}")
             return True
             
         except Exception as e:
             logger.error(f"Error conectando RecognitionClient: {e}")
             self.enabled = False
             return False
+    
+    def check_connection(self):
+        if not self._monitor_socket:
+            return
+        
+        try:
+            while self._monitor_socket.poll(0):
+                message = self._monitor_socket.recv_multipart(flags=zmq.NOBLOCK)
+                if len(message) >= 1:
+                    event_data = message[0]
+                    if len(event_data) >= 4:
+                        event_id = struct.unpack('=H', event_data[:2])[0]
+                        
+                        if event_id == zmq.EVENT_CONNECTED:
+                            self._connected = True
+                            logger.info("[RECOGNIZE] Conectado al servidor C++")
+                        elif event_id == zmq.EVENT_DISCONNECTED:
+                            self._connected = False
+                            logger.warning("[RECOGNIZE] Desconectado del servidor C++")
+                        elif event_id == zmq.EVENT_CONNECT_DELAYED:
+                            self._connected = False
+        except zmq.Again:
+            pass
+        except Exception as e:
+            logger.debug(f"[RECOGNIZE] Error monitoreando conexión: {e}")
     
     def send_recognition_request(
         self,
@@ -149,15 +185,46 @@ class RecognitionClient:
     
     def close(self):
         logger.info("Cerrando RecognitionClient...")
+        self._connected = False
+        
+        if self._monitor_socket:
+            try:
+                self._monitor_socket.close()
+            except:
+                pass
+            self._monitor_socket = None
+        
         if self.send_socket:
-            self.send_socket.close()
+            try:
+                self.send_socket.setsockopt(zmq.LINGER, 0)
+                self.send_socket.close()
+            except:
+                pass
+            self.send_socket = None
+        
         if self.recv_socket:
-            self.recv_socket.close()
+            try:
+                self.recv_socket.setsockopt(zmq.LINGER, 0)
+                self.recv_socket.close()
+            except:
+                pass
+            self.recv_socket = None
+        
         if self.context:
-            self.context.term()
+            try:
+                self.context.term()
+            except:
+                pass
+            self.context = None
+        
         self.enabled = False
         logger.info("RecognitionClient cerrado")
     
     @property
     def is_connected(self) -> bool:
-        return self.enabled and self.send_socket is not None and self.recv_socket is not None
+        self.check_connection()
+        return self._connected
+    
+    @property
+    def is_enabled(self) -> bool:
+        return self.enabled

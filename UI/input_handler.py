@@ -60,6 +60,14 @@ class InputHandler:
             state.current_face_index = 0
             state.current_name = ""
             register_manager.clear_all()
+        
+        elif key == ord('3'):
+            self.logger.info("Solicitud de salida")
+            state.should_exit = True
+            state.register_state = "idle"
+            state.selected_face_ids = []
+            state.current_name = ""
+            register_manager.clear_all()
             
         elif key == 13:
             if state.current_name.strip():
@@ -92,7 +100,8 @@ class InputHandler:
             state.current_name = state.current_name[:-1]
         
         elif 32 <= key <= 126:
-            state.current_name += chr(key)
+            if key != ord('3'):
+                state.current_name += chr(key)
         
         return state
     

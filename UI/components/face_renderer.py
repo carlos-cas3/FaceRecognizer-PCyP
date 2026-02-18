@@ -13,6 +13,8 @@ class FaceRenderer:
         recognized_identities: Optional[Dict[int, Any]] = None
     ):
         for i, (face_id, face_crop, bbox) in enumerate(faces):
+            if i > 9:
+                break
             FaceRenderer._draw_single_face(
                 frame, i, face_id, bbox,
                 mode, selected_face_ids, locked_faces,
@@ -57,7 +59,7 @@ class FaceRenderer:
         
         if FaceIDDrawer.should_draw(mode):
             FaceIDDrawer.draw(
-                frame, face_id, center_x, y,
+                frame, index, center_x, y,
                 is_locked, is_selected
             )
         
