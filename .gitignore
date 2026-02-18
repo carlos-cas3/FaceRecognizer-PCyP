@@ -2,7 +2,10 @@
 data/
 __pycache__/
 venv
+vevn
 __init__.py
 *.md
+!README.md
 *.txt
+
 
