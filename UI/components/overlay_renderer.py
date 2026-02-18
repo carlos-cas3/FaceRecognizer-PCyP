@@ -1,11 +1,8 @@
 from typing import List, Dict, Any, Tuple
 
-from UI.components.overlay import (
-    FaceInfoDisplay,
-    RegisterPanelDisplay,
-    InstructionsDisplay
-)
-
+from UI.components.overlay.face_info_display import FaceInfoDisplay
+from UI.components.overlay.register_panel_display import RegisterPanelDisplay
+from UI.components.overlay.instructions_display import InstructionsDisplay
 
 class OverlayRenderer:
     """

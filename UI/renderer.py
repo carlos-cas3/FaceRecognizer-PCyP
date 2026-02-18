@@ -1,7 +1,9 @@
 import cv2
 from typing import List, Tuple, Dict, Any, Optional
 
-from UI.components import HeaderRenderer, FaceRenderer, OverlayRenderer
+from UI.components.face_renderer import FaceRenderer
+from UI.components.header_renderer import HeaderRenderer
+from UI.components.overlay_renderer import OverlayRenderer
 
 class UIRenderer:
     

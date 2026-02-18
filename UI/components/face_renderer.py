@@ -1,6 +1,8 @@
 from typing import List, Tuple, Dict, Any, Optional
 
-from UI.components.face_drawing import BoundingBoxDrawer, LabelDrawer, FaceIDDrawer
+from UI.components.face_drawing.bbox_drawer import BoundingBoxDrawer
+from UI.components.face_drawing.label_drawer import LabelDrawer
+from UI.components.face_drawing.face_id_drawer import FaceIDDrawer
 
 class FaceRenderer:
     @staticmethod
