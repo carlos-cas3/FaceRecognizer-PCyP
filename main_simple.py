@@ -55,11 +55,15 @@ class FaceRecognizerSimple:
             height=cam_config['resolution'][1]
         )
         
+        # --- AQUÍ ESTÁ EL CAMBIO ---
         det_config = self.config['detection']
         self.detector = FaceDetector(
             model_path=det_config['model_path'],
-            confidence=det_config['confidence']
+            confidence=det_config['confidence'],
+            device=det_config.get('device', 'cpu') # Extraemos el device, usando 'cpu' como seguridad si no lo encuentra
         )
+        # ----------------------------
+
         self.tracker = FaceTracker(
             interval=det_config['detection_interval']
         )
