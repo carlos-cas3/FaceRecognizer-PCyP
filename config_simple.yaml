@@ -12,19 +12,19 @@ detection:
   model_path: "models/yolov8n-face-lindevs.pt"
   confidence: 0.5 # Confianza minima (0.0 - 1.0)
   detection_interval: 0.5 # Segundos entre detecciones YOLO
-  device: "0" # <--- ("0" para GPU)
+  device: "auto" # <--- ("0" para GPU, "cpu" para CPU)
 
 # ZMQ (comunicacion con C++)
 zmq:
   enabled: true # false = modo solo deteccion, true = enviar a C++
 
   # Registro de nuevas personas
-  register_send_endpoint: "tcp://192.168.1.32:5555" # Python envía requests de registro
-  register_recv_endpoint: "tcp://192.168.1.32:5556" # Python recibe confirmaciones
+  register_send_endpoint: "tcp://192.168.18.4:5555" # Python envía requests de registro
+  register_recv_endpoint: "tcp://192.168.18.4:5556" # Python recibe confirmaciones
 
   # Reconocimiento de personas
-  recognition_send_endpoint: "tcp://192.168.1.32:5557" # Python envía requests de reconocimiento
-  recognition_recv_endpoint: "tcp://192.168.1.32:5558" # Python recibe identidades
+  recognition_send_endpoint: "tcp://192.168.18.4:5557" # Python envía requests de reconocimiento
+  recognition_recv_endpoint: "tcp://192.168.18.4:5558" # Python recibe identidades
   confidence_threshold: 0.7 # Confianza minima para aceptar identidad
   result_timeout: 10.0 # Timeout de respaldo
   position_match_threshold: 50 # Pixeles de tolerancia para matching por posicion
