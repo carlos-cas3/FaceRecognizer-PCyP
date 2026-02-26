@@ -79,9 +79,14 @@ class FaceTracker:
         now = time.time()
         faces: List[Tuple[int, Any, Tuple[int, int, int, int]]] = []
         
+        logger.info(f"[TRACKER] process llamado. Tiempo desde última detección: {now - self.last_detection:.2f}s, interval: {self.interval}s")
+        
         if now - self.last_detection >= self.interval:
+            logger.info("[TRACKER] Llamando a _redetect...")
             self._redetect(frame, detector)
             self.last_detection = now
+        else:
+            logger.info("[TRACKER] NO se llama a _redetect (dentro del intervalo)")
         
         valid_trackers: List[Any] = []
         valid_ids: List[int] = []
@@ -133,10 +138,13 @@ class FaceTracker:
             del self.last_boxes[fid]
             logger.debug(f"Memoria de ID {fid} expirada y borrada")
         
+        logger.info(f"[TRACKER] Retornando {len(faces)} caras")
         return faces
     
     def _redetect(self, frame, detector: FaceDetector):
+        logger.info("=== [_REDETECT] Iniciando re-deteccion ===")
         boxes = detector.detect(frame)
+        logger.info(f"=== [_REDETECT] Boxes recibidos del detector: {len(boxes)} ===")
         new_boxes_xywh = []
         
         for (x1, y1, x2, y2) in boxes:
@@ -174,18 +182,22 @@ class FaceTracker:
                 logger.debug(f"Nuevo rostro detectado. Asignando ID {assigned_id}")
             
             try:
+                logger.info(f"=== [_REDETECT] Creando tracker para box {new_box} ===")
                 tracker = self._create_tracker()
                 success = tracker.init(frame, new_box)
+                logger.info(f"=== [_REDETECT] Tracker init result: {success} ===")
                 
-                if success:
+                if success is not False:
                     new_trackers.append(tracker)
                     new_ids.append(assigned_id)
+                    logger.info(f"=== [_REDETECT] Tracker agregado con ID {assigned_id} ===")
             except Exception as e:
                 logger.error(f"Error creando tracker: {e}")
                 continue
         
         self.trackers = new_trackers
         self.ids = new_ids
+        logger.info(f"=== [_REDETECT] Finalizado. Total trackers activos: {len(self.trackers)} ===")
     
     def reset(self):
         self.trackers.clear()
