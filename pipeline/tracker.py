@@ -22,10 +22,31 @@ class FaceTracker:
         logger.info(f"Tracker inicializado: interval={interval}s")
     
     def _create_tracker(self):
-        try:
-            return cv2.legacy.TrackerKCF_create()
-        except AttributeError:
-            pass
+        creator_paths = [
+            ('cv2', 'TrackerMIL_create'),
+            ('cv2.legacy', 'TrackerMIL_create'),
+            ('cv2', 'TrackerKCF_create'),
+            ('cv2.legacy', 'TrackerKCF_create'),
+            ('cv2', 'TrackerCSRT_create'),
+            ('cv2.legacy', 'TrackerCSRT_create'),
+            ('cv2.legacy', 'TrackerMOSSE_create'),
+            ('cv2.legacy', 'TrackerTLD_create'),
+        ]
+        
+        for module_path, attr_name in creator_paths:
+            try:
+                if module_path == 'cv2.legacy':
+                    module = cv2.legacy
+                else:
+                    module = cv2
+                
+                creator_func = getattr(module, attr_name, None)
+                if creator_func is not None:
+                    tracker = creator_func()
+                    logger.debug(f"Tracker creado: {attr_name}")
+                    return tracker
+            except (AttributeError, TypeError):
+                continue
         
         raise RuntimeError(
             "No se pudo crear el tracker. "
