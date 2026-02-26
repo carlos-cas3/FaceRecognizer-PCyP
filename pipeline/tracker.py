@@ -18,14 +18,36 @@ class FaceTracker:
         logger.info(f"Tracker inicializado: interval={interval}s")
     
     def _create_tracker(self):
-        try:
-            # OpenCV 4.5.1+
-            return cv2.legacy.TrackerKCF_create()
-        except AttributeError:
-            pass
+        creator_paths = [
+            ('cv2.legacy', 'TrackerMIL_create'),
+            ('cv2.legacy', 'TrackerKCF_create'),
+            ('cv2.legacy', 'TrackerCSRT_create'),
+            ('cv2.legacy', 'TrackerMOSSE_create'),
+            ('cv2.legacy', 'TrackerTLD_create'),
+            ('cv2', 'TrackerMIL_create'),
+            ('cv2', 'TrackerKCF_create'),
+            ('cv2', 'TrackerCSRT_create'),
+        ]
+        
+        for module_path, attr_name in creator_paths:
+            try:
+                if module_path == 'cv2.legacy':
+                    module = cv2.legacy
+                else:
+                    module = cv2
+                
+                creator_func = getattr(module, attr_name, None)
+                if creator_func is not None:
+                    tracker = creator_func()
+                    logger.debug(f"Tracker creado: {attr_name}")
+                    return tracker
+            except (AttributeError, TypeError):
+                continue
         
         raise RuntimeError(
             "No se pudo crear el tracker. "
+            "Instala opencv-contrib-python. "
+            f"OpenCV version: {cv2.__version__}"
         )
     
     def process(
@@ -36,12 +58,10 @@ class FaceTracker:
         now = time.time()
         faces: List[Tuple[int, Any, Tuple[int, int, int, int]]] = []
         
-        # Re-detectar si pasó el intervalo
         if now - self.last_detection >= self.interval:
             self._redetect(frame, detector)
             self.last_detection = now
         
-        # Actualizar trackers existentes
         valid_trackers: List[Any] = []
         valid_ids: List[int] = []
         
@@ -114,7 +134,6 @@ class FaceTracker:
         logger.debug(f"Total trackers activos: {len(self.trackers)}")
     
     def reset(self):
-        """Resetea todos los trackers"""
         self.trackers.clear()
         self.ids.clear()
         self.next_id = 0
