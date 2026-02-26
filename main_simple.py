@@ -56,11 +56,25 @@ class FaceRecognizerSimple:
         )
         
         # --- AQUÍ ESTÁ EL CAMBIO ---
+        import torch
         det_config = self.config['detection']
+        
+        # Leemos lo que haya en el YAML y lo pasamos a texto en minúsculas por seguridad
+        yaml_device = str(det_config.get('device', 'auto')).lower()
+        
+        # Si el YAML dice auto, cuda o 0, intentamos usar la GPU
+        if yaml_device in ['auto', 'cuda', '0']:
+            if torch.cuda.is_available():
+                selected_device = 0  # <- Importante: Pasamos el NÚMERO 0, no texto
+            else:
+                selected_device = 'cpu'
+        else:
+            selected_device = 'cpu'
+            
         self.detector = FaceDetector(
             model_path=det_config['model_path'],
             confidence=det_config['confidence'],
-            device=det_config.get('device', 'cpu') # Extraemos el device, usando 'cpu' como seguridad si no lo encuentra
+            device=selected_device 
         )
         # ----------------------------
 

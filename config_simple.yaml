@@ -12,7 +12,7 @@ detection:
   model_path: "models/yolov8n-face-lindevs.pt"
   confidence: 0.5 # Confianza minima (0.0 - 1.0)
   detection_interval: 0.5 # Segundos entre detecciones YOLO
-  device: "cpu" # <--- ("0" para GPU, "cpu" para CPU)
+  device: "auto" # <--- ("0" para GPU, "cpu" para CPU)
 
 # ZMQ (comunicacion con C++)
 zmq:
