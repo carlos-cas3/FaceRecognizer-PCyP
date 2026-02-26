@@ -29,6 +29,8 @@ class FaceTracker:
         
         raise RuntimeError(
             "No se pudo crear el tracker. "
+            "Instala opencv-contrib-python. "
+            f"OpenCV version: {cv2.__version__}"
         )
     
     def _calculate_iou(self, boxA: Tuple[int, int, int, int], boxB: Tuple[int, int, int, int]) -> float:
@@ -56,12 +58,10 @@ class FaceTracker:
         now = time.time()
         faces: List[Tuple[int, Any, Tuple[int, int, int, int]]] = []
         
-        # Re-detectar si pasó el intervalo
         if now - self.last_detection >= self.interval:
             self._redetect(frame, detector)
             self.last_detection = now
         
-        # Actualizar trackers existentes
         valid_trackers: List[Any] = []
         valid_ids: List[int] = []
         
