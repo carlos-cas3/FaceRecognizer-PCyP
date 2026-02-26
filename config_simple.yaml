@@ -3,36 +3,34 @@
 
 # Camara
 camera:
-  index: 0                    # Indice de la camara (0 = webcam principal)
+  index: 0 # Indice de la camara (0 = webcam principal)
   name: "Camara Principal"
-  resolution: [640, 480]      # Resolucion de captura
+  resolution: [640, 480] # Resolucion de captura
 
 # Deteccion YOLO
 detection:
   model_path: "models/yolov8n-face-lindevs.pt"
-  confidence: 0.5             # Confianza minima (0.0 - 1.0)
-  detection_interval: 0.5     # Segundos entre detecciones YOLO
+  confidence: 0.5 # Confianza minima (0.0 - 1.0)
+  detection_interval: 0.5 # Segundos entre detecciones YOLO
+  device: "0" # <--- ("0" para GPU)
 
 # ZMQ (comunicacion con C++)
 zmq:
-  enabled: true              # false = modo solo deteccion, true = enviar a C++
-  
-  # Registro de nuevas personas
-  register_send_endpoint: "tcp://192.168.18.4:5555"   # Python envía requests de registro
-  register_recv_endpoint: "tcp://192.168.18.4:5556"   # Python recibe confirmaciones
-  
-  # Reconocimiento de personas
-  recognition_send_endpoint: "tcp://192.168.18.4:5557"   # Python envía requests de reconocimiento
-  recognition_recv_endpoint: "tcp://192.168.18.4:5558"   # Python recibe identidades
+  enabled: true # false = modo solo deteccion, true = enviar a C++
 
-# Reconocimiento facial
-recognition:
-  interval: 1.0                    # Segundos entre envios de reconocimiento
-  confidence_threshold: 0.7        # Confianza minima para aceptar identidad
-  result_timeout: 10.0             # Timeout de respaldo
-  position_match_threshold: 50     # Pixeles de tolerancia para matching por posicion
-  position_cache_timeout: 10.0     # Segundos antes de olvidar posicion cacheada
-  
+  # Registro de nuevas personas
+  register_send_endpoint: "tcp://192.168.1.32:5555" # Python envía requests de registro
+  register_recv_endpoint: "tcp://192.168.1.32:5556" # Python recibe confirmaciones
+
+  # Reconocimiento de personas
+  recognition_send_endpoint: "tcp://192.168.1.32:5557" # Python envía requests de reconocimiento
+  recognition_recv_endpoint: "tcp://192.168.1.32:5558" # Python recibe identidades
+  confidence_threshold: 0.7 # Confianza minima para aceptar identidad
+  result_timeout: 10.0 # Timeout de respaldo
+  position_match_threshold: 50 # Pixeles de tolerancia para matching por posicion
+  position_cache_timeout: 10.0 # Segundos antes de olvidar posicion cacheada
+
+
 # Arquitectura de puertos:
 # - 5555: Python → C++ (registro requests)
 # - 5556: C++ → Python (registro confirmaciones)
