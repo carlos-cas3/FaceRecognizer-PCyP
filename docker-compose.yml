@@ -1,0 +1,12 @@
+services:
+  face-recognition:
+    build: .
+    image: facerecognizer:latest
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - ./models:/app/models
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    devices:
+      - /dev/video0:/dev/video0
+    network_mode: host

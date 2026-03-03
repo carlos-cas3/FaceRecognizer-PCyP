@@ -1,0 +1,10 @@
+.git/
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.log
+*.md
+.DS_Store
+*.pt
+!models/*.pt
